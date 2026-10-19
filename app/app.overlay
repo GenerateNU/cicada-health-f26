@@ -1,0 +1,51 @@
+/*
+* Hardware Overlay
+* WS2812B LED strip:
+*   MOSI: GPIO5  (SPI2)
+*/
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+    leds {
+        compatiable = "gpio-leds";
+        led0: led_0 {
+            gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+        };
+    };
+    aliases{
+        led0 = &led0;
+    };
+};
+
+&pinctrl {
+     /* SPI2 — WS2812B LED strip data line */
+    spim2_default: spim2_default {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK, 0, 4)>,
+                    <NRF_PSEL(SPIM_MOSI, 0 ,8)>;
+        };
+    };
+};
+
+/*------------- For LED Strip -------------------- */
+&spi2 {
+    compatible = "nordic,nrf-spim";
+    status = "okay";
+    pinctrl-0 = <&spim2_default>;
+    /delete-property/ pinctrl-1;
+    pinctrl-names = "default";
+
+    led_strip: ws2812@0 {
+        compatible = "worldsemi,ws2812-spi";
+        reg = <0>;
+        spi-max-frequency = <4000000>;
+        chain-length = <4>;
+        color-mapping = <2  /*GREEN*/
+                        1   /*RED */
+                        3>;   /*BLUE */
+        spi-one-frame = <0x70>;
+        spi-zero-frame = <0x40>;
+        bits-per-symbol = <8>;
+        reset-delay = <280>;
+    };
+};
