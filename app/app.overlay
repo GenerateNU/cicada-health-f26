@@ -2,6 +2,8 @@
 * Hardware Overlay
 * WS2812B LED strip:
 *   MOSI: GPIO5  (SPI2)
+*nRF52832:
+*   UART
 */
 #include <zephyr/dt-bindings/led/led.h>
 
@@ -26,6 +28,8 @@
         };
     };
 };
+
+/* */
 
 /*------------- For LED Strip -------------------- */
 &spi2 {
