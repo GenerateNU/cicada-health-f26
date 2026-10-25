@@ -32,16 +32,14 @@ int ble_init(void)
 {
     int err = bt_enable(NULL);
 
-    print("Starting BLE \n");
+    printk("Starting BLE \n");
 
     if (err) {
         printk("BLE init failed (err %d) \n", err);
         return 0;
     }
 
-    print("BLE initalized \n");
-
-    printk("BLE initialized \n");
+    printk("BLE initalized \n");
 
     err = bt_le_adv_start(BT_LE_ADV_NCONN, test_data, ARRAY_SIZE(test_data), NULL, 0);
     if (err) {
