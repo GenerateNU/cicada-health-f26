@@ -1,7 +1,8 @@
 #include <zephyr/kernel.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <src/ble/ble.h>
-
-//
 
 /*PMIC characteristic UUID: 637a4ded-0584-4456-9735-ee98f4564d57 */
 #define BT_UUID_PMIC_CHAR_VAL \
