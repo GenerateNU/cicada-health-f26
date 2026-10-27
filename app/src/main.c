@@ -3,6 +3,7 @@
 // zephyr/device.h is included eventually through kernel.h
 #include <zephyr/drivers/gpio.h>
 #include "led_strip.h"
+#include "ble/ble.h"
 
 // This is accessing the DeviceTree node through its label (can see the entire devicetree in generated zephyr.dts file in the build directory)
 #define LED2 DT_ALIAS(led0)
@@ -13,31 +14,16 @@ static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED2, gpios);
 
 int main(void)
 {
-    printk("starting LED strip \n");
+    printk("booting  \n");
 
-    int ret = led_strip_init();
+    int ret = ble_init();
     if (ret < 0){
-        printk("LED strip init failed: %d", ret);
+        printk("BLE init failed: %d", ret);
         return 0;
     }
 
     printk("init successful \n");
     k_msleep(3000);
-
-    while (true){
-        ret = led_strip_power();
-        if (ret < 0){
-            printk("LED failed: %d", ret);
-        }
-
-        led_strip_clear();
-        k_msleep(3000);
-
-        ret = led_strip_clean();
-        if (ret < 0){
-            printk("LED failed: %d", ret);
-        }
-    }
 
     // led_0.port is used because you need to check if the gpio controller itself is ready to be used, if you just do led_0.pin you will get a number like '9'
     /*if (!device_is_ready(led.port))

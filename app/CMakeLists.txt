@@ -11,9 +11,11 @@ project(firepod)
 target_sources(app PRIVATE 
     src/main.c
     src/led_strip.c
+    src/ble/ble.c
 )
 
 target_include_directories(app PRIVATE include)
+target_include_directories(app PRIVATE src)
 
 #[[
 Example from my capstone project:

@@ -2,11 +2,13 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
-#include <src/ble/ble.h>
+#include <ble/ble.h>
 
 /*PMIC characteristic UUID: 637a4ded-0584-4456-9735-ee98f4564d57 */
-#define BT_UUID_PMIC_CHAR_VAL \
-    BT_UUID_128_ENCODE(0x637a4ded, 0x0584, 0x4456, 0x9735, 0xee98f4564d57)
+#define BT_UUID_PMIC_CHAR_VAL BT_UUID_128_ENCODE(0x637a4ded, 0x0584, 0x4456, 0x9735, 0xee98f4564d57)
+#define BT_UUID_PMIC_CHAR BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
+
+#define BT_UUID_PMIC_SVC  BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
 #define BT_UUID_PMIC_CHAR BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
 
 static const struct bt_data test_data[] = {
@@ -21,12 +23,12 @@ static ssize_t read_pmic(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 BT_GATT_SERVICE_DEFINE(
-    pmic_service, BT_GATT_PRIMARY_SERVICE(BT_UUID_PMIC_CHAR_VAL),
-    BT_GATT_CHARACTERISTIC(BT_UUID_PMIC_CHAR_VAL,
+    pmic_service, BT_GATT_PRIMARY_SERVICE(BT_UUID_PMIC_SVC),
+    BT_GATT_CHARACTERISTIC(BT_UUID_PMIC_CHAR,
                            BT_GATT_CHRC_READ,
                            BT_GATT_PERM_READ,
                            read_pmic, NULL, NULL),
-)
+);
 
 int ble_init(void)
 {

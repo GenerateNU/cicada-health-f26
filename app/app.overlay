@@ -28,7 +28,7 @@
         };
     };
 
-    /*SPI1 - External Flash */
+    /*SPI1 - Internal Flash */
 };
 
 /*------------------ For External Flash  --------------------- */
