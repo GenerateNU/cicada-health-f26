@@ -8,8 +8,14 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(firepod)
 
 # app is a predesignated target that zephyr uses
-target_sources(app PRIVATE src/main.c)
+target_sources(app PRIVATE 
+    src/main.c
+    src/led_strip.c
+    src/ble/ble.c
+)
 
+target_include_directories(app PRIVATE include)
+target_include_directories(app PRIVATE src)
 
 #[[
 Example from my capstone project:
