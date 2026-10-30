@@ -13,6 +13,7 @@ static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED2, gpios);
 
 int main(void)
 {
+    printk("booting \n");
     printk("starting LED strip \n");
 
     int ret = led_strip_init();
