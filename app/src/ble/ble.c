@@ -11,9 +11,11 @@
 #define BT_UUID_PMIC_SVC  BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
 #define BT_UUID_PMIC_CHAR BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
 
+static uint16_t pmic_value = 0;
+
 static const struct bt_data test_data[] = {
     BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR),
-    BT_DATA_BYTES(BT_DATA_NAME_COMPLETE, 't', 'e', 's', 't'),
+    BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
 static ssize_t read_pmic(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -30,11 +32,47 @@ BT_GATT_SERVICE_DEFINE(
                            read_pmic, NULL, NULL),
 );
 
+static void adv_restart(struct k_work *work)
+{
+    int err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, test_data, ARRAY_SIZE(test_data), NULL, 0);
+    if (err) {
+        printk("Advertising failed to restart (err %d) \n", err);
+    } else {
+        printk("Advertising restarted \n");
+    }
+}
+static K_WORK_DEFINE(adv_work, adv_restart);
+
+static void connected(struct bt_conn *conn, uint8_t err)
+{
+    if (err) {
+        printk("Connection failed (err %u)\n", err);
+    } else {
+        printk("Connected\n");
+    }
+}
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+    printk("Disconnected (reason %u)\n", reason);
+}
+
+static void recycled(struct bt_conn *conn, uint8_t reason)
+{
+    printk("Recycled (reason %u)\n", reason);
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+    .connected = connected,
+    .disconnected = disconnected,
+    .recycled = recycled,
+};
+
 int ble_init(void)
 {
-    int err = bt_enable(NULL);
-
     printk("Starting BLE \n");
+
+    int err = bt_enable(NULL);
 
     if (err) {
         printk("BLE init failed (err %d) \n", err);
@@ -43,7 +81,7 @@ int ble_init(void)
 
     printk("BLE initalized \n");
 
-    err = bt_le_adv_start(BT_LE_ADV_NCONN, test_data, ARRAY_SIZE(test_data), NULL, 0);
+    err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, test_data, ARRAY_SIZE(test_data), NULL, 0);
     if (err) {
         printk("Advertising failed to start (err %d) \n", err);
         return 0;
