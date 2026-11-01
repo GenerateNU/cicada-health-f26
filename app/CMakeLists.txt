@@ -12,6 +12,7 @@ target_sources(app PRIVATE
     src/main.c
     src/led_strip.c
     src/ble/ble.c
+    src/ble/storage.c
 )
 
 target_include_directories(app PRIVATE include)

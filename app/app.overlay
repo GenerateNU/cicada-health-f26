@@ -31,16 +31,20 @@
     /*SPI1 - Internal Flash */
 };
 
-/*------------------ For External Flash  --------------------- */
-/*&i2c1 {
-    status = "disabled";
-};*/
+/*------------------ For Internal Flash  --------------------- */
+&flash0 {
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = <1>;
+        #size-cells = <1>;
 
-/*&spi1 {
-    status = "okay";
-    pinctrl-0 = <&ext_flash_spi_default>;
-
-}*/
+        partition@0 {
+            label = "storage";
+            reg = <0x00050000 0x00028000>; /* 256kB */
+            read-only;
+        };
+    }
+}
 
 /*------------- For LED Strip -------------------- */
 &spi2 {
