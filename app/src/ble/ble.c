@@ -11,6 +11,8 @@
 #define BT_UUID_PMIC_SVC  BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
 #define BT_UUID_PMIC_CHAR BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
 
+#define NOTIFY_INTERVAL 500
+
 static uint16_t pmic_value = 0;
 
 static const struct bt_data test_data[] = {
@@ -62,11 +64,28 @@ static void recycled(struct bt_conn *conn, uint8_t reason)
     printk("Recycled (reason %u)\n", reason);
 }
 
+static void 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
     .connected = connected,
     .disconnected = disconnected,
     .recycled = recycled,
 };
+
+static void test_data(void) {
+    int value = 0;
+    value++;
+    if (value == 200){
+        value = 100;
+    }
+}
+
+void send_data_thread(void) {
+    while(1){
+        test_data();
+        send_test_data(value);
+        k_sleep(K_MSEC(NOTIFY_INTERVAL));
+    }
+}
 
 int ble_init(void)
 {
