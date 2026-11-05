@@ -20,7 +20,7 @@ struct fcb storage_fcb = {
 
 }
 
-int fcb_init(void){
+int storage_init(void){
     uint32_t count = ARRAY_SIZE(storage_sectors);
 
 	int rc = flash_get_sectors(STORAGE_ID, storage_sectors, &count);
@@ -32,11 +32,11 @@ int fcb_init(void){
 	return fcb_init(&storage_fcb, STORAGE_ID);
 }
 
-int fcb_write(void *data, size_t len){
+int storage_write(void *data, size_t len){
     return fcb_append(&storage_fcb, len, data);
 }
 
-int fcb_erase(void){
+int storage_erase(void){
 	return fcb_rotate(&storage_fcb);
 }
 
