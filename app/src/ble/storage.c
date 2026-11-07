@@ -18,25 +18,49 @@ struct fcb storage_fcb = {
 	.f_scratch_cnt = 1,
 	.f_sectors = storage_sectors,
 
-}
+};
 
 int storage_init(void){
     uint32_t count = ARRAY_SIZE(storage_sectors);
 
-	int rc = flash_get_sectors(STORAGE_ID, storage_sectors, &count);
+	int rc = flash_area_get_sectors(STORAGE_ID, &count, storage_sectors);
 	if (rc) {
 		return rc;
 	}
 
 	storage_fcb.f_sector_count = count;
-	return fcb_init(&storage_fcb, STORAGE_ID);
+	return fcb_init(STORAGE_ID, &storage_fcb);
 }
 
 int storage_write(void *data, size_t len){
-    return fcb_append(&storage_fcb, len, data);
+	struct fcb_entry loc;
+	int rc;
+
+	if (data == NULL || len == 0) {
+		return -EINVAL;
+	}
+
+	rc = fcb_append(&storage_fcb, len, &loc);
+	if (rc == -ENOSPC) {
+		rc = fcb_rotate(&storage_fcb);
+		if (rc == 0) {
+			rc = fcb_append(&storage_fcb, len, &loc);
+		}
+	}
+
+	if (rc){
+		return rc;
+	}
+
+	rc = flash_area_write(storage_fcb.fap, FCB_ENTRY_FA_DATA_OFF(loc), data, len);
+	if (rc) {
+		return rc;
+	}
+
+    return fcb_append_finish(&storage_fcb, &loc);
 }
 
-int storage_erase(void){
+int storage_erase_oldest(void){
 	return fcb_rotate(&storage_fcb);
 }
 
