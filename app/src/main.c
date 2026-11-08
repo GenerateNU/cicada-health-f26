@@ -4,6 +4,7 @@
 #include <zephyr/drivers/gpio.h>
 #include "led_strip.h"
 #include "ble/ble.h"
+#include "ble/storage.h"
 
 // This is accessing the DeviceTree node through its label (can see the entire devicetree in generated zephyr.dts file in the build directory)
 #define LED2 DT_ALIAS(led0)
@@ -16,13 +17,33 @@ int main(void)
 {
     printk("booting  \n");
 
-    int ret = ble_init();
+    int ret = storage_init();
+    if (ret < 0){
+        printk("Flash init failed: %d", ret);
+        return 0;
+    }
+
+    printk("flash init successful \n");
+
+    int in = 0;
+    int out = 0;
+
+    storage_read(&out, sizeof(out));
+    in = 42;
+
+    storage_write(&in, sizeof(in));
+    printk("wrote to flash \n");
+
+    storage_read(&out, sizeof(out));
+    printk("read from flash \n");
+
+    ret = ble_init();
     if (ret < 0){
         printk("BLE init failed: %d", ret);
         return 0;
     }
 
-    printk("init successful \n");
+    printk("ble init successful \n");
     k_msleep(3000);
 
     // led_0.port is used because you need to check if the gpio controller itself is ready to be used, if you just do led_0.pin you will get a number like '9'

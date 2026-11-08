@@ -2,8 +2,6 @@
 #define BLE_H
 
 int ble_init(void);
-static ssize_t read_pmic(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-                         void *buf, uint16_t len, uint16_t offset);
 
 static void adv_restart(struct k_work *work);
 

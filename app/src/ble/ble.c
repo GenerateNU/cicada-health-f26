@@ -64,25 +64,25 @@ static void recycled(struct bt_conn *conn, uint8_t reason)
     printk("Recycled (reason %u)\n", reason);
 }
 
-static void 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
     .connected = connected,
     .disconnected = disconnected,
     .recycled = recycled,
 };
 
-static void test_data(void) {
+static int test(void) {
     int value = 0;
     value++;
     if (value == 200){
         value = 100;
     }
+
+    return value;
 }
 
-void send_data_thread(void) {
+static void send_data_thread(void) {
     while(1){
-        test_data();
-        send_test_data(value);
+        send_test_data(test());
         k_sleep(K_MSEC(NOTIFY_INTERVAL));
     }
 }
@@ -105,8 +105,6 @@ int ble_init(void)
         printk("Advertising failed to start (err %d) \n", err);
         return 0;
     }
-
-    printk("Test is advertising \n");
 
     return 0;
 }
