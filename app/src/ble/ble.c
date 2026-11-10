@@ -3,6 +3,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <ble/ble.h>
+#include <ble/storage.h>
 
 /*PMIC characteristic UUID: 637a4ded-0584-4456-9735-ee98f4564d57 */
 #define BT_UUID_PMIC_CHAR_VAL BT_UUID_128_ENCODE(0x637a4ded, 0x0584, 0x4456, 0x9735, 0xee98f4564d57)
@@ -13,7 +14,11 @@
 
 #define NOTIFY_INTERVAL 500
 
-static uint16_t pmic_value = 0;
+struct pack_ctx {
+    uint8_t pkt[244];
+    uint16_t len;
+    uint16_t max;
+};
 
 static const struct bt_data test_data[] = {
     BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR),
@@ -105,6 +110,18 @@ int ble_init(void)
         printk("Advertising failed to start (err %d) \n", err);
         return 0;
     }
+
+    return 0;
+}
+
+int send_storage_data(const uint16_t *data, uint16_t len, void *user){
+    struct pack_ctx *ctx = user;
+    if (ctx->len + len > ctx->max){
+        ctx->len = 0;
+    }
+
+    memcpy(&ctx->pkt[ctx->len], data, len);
+    ctx->len += len;
 
     return 0;
 }
