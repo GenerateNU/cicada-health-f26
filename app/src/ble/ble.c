@@ -12,7 +12,13 @@
 #define BT_UUID_PMIC_SVC  BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
 #define BT_UUID_PMIC_CHAR BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
 
+/* uuid: 6c50dfe2-646c-4117-b977-b3855939271b*/
+#define BT_UUID_PMIC_CTRL_VAL BT_UUID_128_ENCODE(0x6c50dfe2, 0x646c, 0x4117, 0xb977, 0xb3855939271b);
+#define BT_UUID_PMIC_CTRL BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
 #define NOTIFY_INTERVAL 500
+
+static bool notify_enabled;
+static struct bt_conn *cur_conn;
 
 struct pack_ctx {
     uint8_t pkt[244];
@@ -31,12 +37,35 @@ static ssize_t read_pmic(struct bt_conn *conn, const struct bt_gatt_attr *attr,
     return bt_gatt_attr_read(conn, attr, buf, len, offset, &test_data, sizeof(test_data));
 }
 
+K_MSGQ_DEFINE(cmd_q, sizeof(uint8_t), 4, 1);
+
+static ssize_t ctrl_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+                          const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
+{
+    k_msgq_put(&cmd_q, buf, K_NO_WAIT);
+    return len;
+}
+
+static void data_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value){
+    printk("enable notfications");
+    notify_enabled = (value == BT_GATT_CCC_NOTIFY);
+}
+
 BT_GATT_SERVICE_DEFINE(
     pmic_service, BT_GATT_PRIMARY_SERVICE(BT_UUID_PMIC_SVC),
+
+    //notify from device to phone
     BT_GATT_CHARACTERISTIC(BT_UUID_PMIC_CHAR,
-                           BT_GATT_CHRC_READ,
-                           BT_GATT_PERM_READ,
-                           read_pmic, NULL, NULL),
+                           BT_GATT_CHRC_NOTIFY,
+                           BT_GATT_PERM_NONE,
+                           NULL, NULL, NULL),
+    BT_GATT_CCC(data_ccc_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+
+    //phone to device
+    BT_GATT_CHARACTERISTIC(BT_UUID_PMIC_CTRL,
+                           BT_GATT_CHRC_WRITE,
+                           BT_GATT_PERM_WRITE,
+                           NULL, ctrl_write, NULL),
 );
 
 static void adv_restart(struct k_work *work)
@@ -48,6 +77,7 @@ static void adv_restart(struct k_work *work)
         printk("Advertising restarted \n");
     }
 }
+
 static K_WORK_DEFINE(adv_work, adv_restart);
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -75,21 +105,8 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
     .recycled = recycled,
 };
 
-static int test(void) {
-    int value = 0;
-    value++;
-    if (value == 200){
-        value = 100;
-    }
-
-    return value;
-}
-
-static void send_data_thread(void) {
-    while(1){
-        send_test_data(test());
-        k_sleep(K_MSEC(NOTIFY_INTERVAL));
-    }
+int ble_wait_for_command(uint8_t *cmd, k_timeout_t timeout){
+    return k_msgq_get(&cmd_q, cmd, timeout);
 }
 
 int ble_init(void)
@@ -114,14 +131,18 @@ int ble_init(void)
     return 0;
 }
 
-int send_storage_data(const uint16_t *data, uint16_t len, void *user){
-    struct pack_ctx *ctx = user;
-    if (ctx->len + len > ctx->max){
-        ctx->len = 0;
+int send_storage_data(void) {
+    struct fcb_entry loc = {0};
+    uint8_t buf[32];
+    uint16_t len;
+    int err = 0;
+
+    while (err == 0 && storage_read_next(&loc, buf, sizeof(buf), &len) == 0){
+        err = bt_gatt_notify(cur_conn, &pmic_service.attrs[1], buf, len);
+        if (err == -ENOMEM) {
+            k_sleep(K_MSEC(10));
+        }
     }
 
-    memcpy(&ctx->pkt[ctx->len], data, len);
-    ctx->len += len;
-
-    return 0;
+    return err;
 }

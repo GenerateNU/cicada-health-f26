@@ -3,13 +3,8 @@
 
 int ble_init(void);
 
-static void adv_restart(struct k_work *work);
-
-static void connected(struct bt_conn *conn, uint8_t err);
-static void disconnected(struct bt_conn *conn, uint8_t reason);
-static void recycled(struct bt_conn *conn, uint8_t reason);
-
+int ble_wait_for_command(uint8_t *cmd, k_timeout_t timeout);
 int ble_init(void);
-int send_storage_data(const uint16_t *data, uint16_t len, void *user);
+int send_storage_data(void);
 
 #endif // BLE_H

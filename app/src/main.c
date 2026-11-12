@@ -17,64 +17,50 @@ int main(void)
 {
     printk("booting  \n");
 
+    //intialize flash
     int ret = storage_init();
     if (ret < 0){
         printk("Flash init failed: %d", ret);
-        return 0;
     }
 
     printk("flash init successful \n");
 
-    int in = 0;
-    int out = 0;
+    storage_read();
 
-    storage_read(&out, sizeof(out));
-    in = 42;
-
-    storage_write(&in, sizeof(in));
+    //write fake data into flash
+    printk("start logging");
+    for (int i = 0; i < 10; i++){
+        storage_log_data();
+        k_sleep(K_SECONDS(1));
+    }
     printk("wrote to flash \n");
 
-    storage_read(&out, sizeof(out));
-    printk("read from flash \n");
-
+    //intialize ble
     ret = ble_init();
     if (ret < 0){
         printk("BLE init failed: %d", ret);
-        return 0;
     }
 
     printk("ble init successful \n");
     k_msleep(3000);
 
-    // led_0.port is used because you need to check if the gpio controller itself is ready to be used, if you just do led_0.pin you will get a number like '9'
-    /*if (!device_is_ready(led.port))
-    {
-        return 0;
-    }
+    //transfer data and then clear flash
+    while (1) {
+        uint8_t cmd;
+        ble_wait_for_command(&cmd, K_FOREVER);
+        printk("waiting for command");
 
-    int state = 0;
-
-    int ret;
-    // configuration of led_0 pin
-    ret = gpio_pin_configure_dt(&led, GPIO_OUTPUT);
-
-    if (ret != 0)
-    {
-        return 0;
-    }
-
-    while (true)
-    {
-        state = !state;
-        ret = gpio_pin_set_dt(&led, state);
-        if (ret != 0)
-        {
-            return 0;
+        if (cmd == 0x01) {
+            printk("send data");
+            send_storage_data();
+        } else if (cmd == 0x02) {
+            printk("clear");
+            storage_clear();
         }
-        printk("LED is now in state: %d", state);
+    }
 
-        k_msleep(4000);
-    }*/
+    storage_read();
+    printk("cleared flash");
 
     return 0;
 }
