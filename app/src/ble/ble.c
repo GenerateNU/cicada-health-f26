@@ -5,16 +5,18 @@
 #include <ble/ble.h>
 #include <ble/storage.h>
 
+/*Servie UUID: 117173dc-c238-48d4-9b70-88b48f3134b1*/
+#define BT_UUID_PMIC_SVC_VAL  BT_UUID_128_ENCODE(0x117173dc, 0xc238, 0x48d4, 0x9b70, 0x88b48f3134b)
+#define BT_UUID_PMIC_SVC      BT_UUID_DECLARE_128(BT_UUID_PMIC_SVC_VAL)
+
 /*PMIC characteristic UUID: 637a4ded-0584-4456-9735-ee98f4564d57 */
 #define BT_UUID_PMIC_CHAR_VAL BT_UUID_128_ENCODE(0x637a4ded, 0x0584, 0x4456, 0x9735, 0xee98f4564d57)
-#define BT_UUID_PMIC_CHAR BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
+#define BT_UUID_PMIC_CHAR     BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
 
-#define BT_UUID_PMIC_SVC  BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
-#define BT_UUID_PMIC_CHAR BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
+/* CTRL UUID: 6c50dfe2-646c-4117-b977-b3855939271b*/
+#define BT_UUID_PMIC_CTRL_VAL BT_UUID_128_ENCODE(0x6c50dfe2, 0x646c, 0x4117, 0xb977, 0xb3855939271b)
+#define BT_UUID_PMIC_CTRL     BT_UUID_DECLARE_128(BT_UUID_PMIC_CTRL_VAL)
 
-/* uuid: 6c50dfe2-646c-4117-b977-b3855939271b*/
-#define BT_UUID_PMIC_CTRL_VAL BT_UUID_128_ENCODE(0x6c50dfe2, 0x646c, 0x4117, 0xb977, 0xb3855939271b);
-#define BT_UUID_PMIC_CTRL BT_UUID_DECLARE_128(BT_UUID_PMIC_CHAR_VAL)
 #define NOTIFY_INTERVAL 500
 
 static bool notify_enabled;
@@ -47,7 +49,7 @@ static ssize_t ctrl_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 static void data_ccc_changed(const struct bt_gatt_attr *attr, uint16_t value){
-    printk("enable notfications");
+    printk("enable notfications \n");
     notify_enabled = (value == BT_GATT_CCC_NOTIFY);
 }
 
@@ -136,13 +138,28 @@ int send_storage_data(void) {
     uint8_t buf[32];
     uint16_t len;
     int err = 0;
+    int count = 0;
 
     while (err == 0 && storage_read_next(&loc, buf, sizeof(buf), &len) == 0){
-        err = bt_gatt_notify(cur_conn, &pmic_service.attrs[1], buf, len);
-        if (err == -ENOMEM) {
-            k_sleep(K_MSEC(10));
+        struct pmic_record r;
+        char str[64];
+        int message;
+        
+        memcpy(&r, buf, sizeof(r));
+        message = snprintk(str, sizeof(str), "t=%u v=%u i=%d",
+                     r.timestamp_ms, r.vbat_mv, r.ibat_ma);
+        do{
+            err = bt_gatt_notify(cur_conn, &pmic_service.attrs[1], str, message);
+            if (err == -ENOMEM) {
+                k_sleep(K_MSEC(10));
+            }
+        } while (err == -ENOMEM);
+
+        if (err == 0) {
+            count++;
         }
     }
 
+    printk("sent %d records (err %d) \n", count, err);
     return err;
 }

@@ -88,9 +88,9 @@ static int print_cb(struct fcb_entry_ctx *ctx, void *arg){
 }
 
 int storage_read(void){
-	printk("---------------------------------\n");
+	printk("\n---------------------------------\n");
 	int rc = fcb_walk(&storage_fcb, NULL, print_cb, NULL);
-	printk("-------------- end --------------\n");
+	printk("-------------- end --------------\n\n");
 	return rc;
 }
 
@@ -126,7 +126,6 @@ static void fake_pmic_data(struct pmic_record *rec){
 }
 
 int storage_log_data(void){
-	storage_clear();
 	fake_pmic_data(&rec);
 	return storage_write(&rec, sizeof(rec));
 }

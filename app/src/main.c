@@ -26,9 +26,10 @@ int main(void)
     printk("flash init successful \n");
 
     storage_read();
+    storage_clear();
 
     //write fake data into flash
-    printk("start logging");
+    printk("start logging \n");
     for (int i = 0; i < 10; i++){
         storage_log_data();
         k_sleep(K_SECONDS(1));
@@ -48,19 +49,20 @@ int main(void)
     while (1) {
         uint8_t cmd;
         ble_wait_for_command(&cmd, K_FOREVER);
-        printk("waiting for command");
+        printk("waiting for command \n");
 
         if (cmd == 0x01) {
-            printk("send data");
+            printk("send data \n");
             send_storage_data();
+            printk("sent data \n");
         } else if (cmd == 0x02) {
-            printk("clear");
+            printk("clear \n");
             storage_clear();
         }
     }
 
     storage_read();
-    printk("cleared flash");
+    printk("cleared flash \n");
 
     return 0;
 }
