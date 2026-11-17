@@ -20,16 +20,85 @@
 };
 
 &pinctrl {
-     /* SPI2 — WS2812B LED strip data line */
-    spim2_default: spim2_default {
+     /* SPI1 — AFE */
+    spim1_default: spim1_default {
         group1 {
-            psels = <NRF_PSEL(SPIM_SCK, 0, 4)>,
-                    <NRF_PSEL(SPIM_MOSI, 0 ,8)>;
+            psels = <NRF_PSEL(SPIM_MISO, 0, 2)>,
+                    <NRF_PSEL(SPIM_MOSI, 0 ,3)>,
+                    <NRF_PSEL(SPIM_SCLK, 0 ,4)>;
         };
+    };
+
+    /* UART */
+    uart0_default: uart0_default {
+        group1 {
+            psels = <NRF_PSEL(UART_TX, 0, 6)>;
+        };
+        group2 {
+            psels = <NRF_PSEL(UART_RX, 0, 7)>;
+        };
+    };
+    uart0_sleep: uart0_sleep {
+        group1 {
+            psels = <NRF_PSEL(UART_TX, 0, 6)>;
+            psels = <NRF_PSEL(UART_RX, 0, 7)>;
+            low-power-enable;
+        };
+    };
+
+
+     /* I2C */
+    i2c0_default: i2c0_default {
+        group1 {
+            psels = <NRF_PSEL(SDA, 0, 11)>,
+                    <NRF_PSEL(SCL, 0 ,12)>;
+        };
+    };
+
+};
+
+/* For AFE - AD5941*/
+&spi1 {
+    status = "okay";
+    pinctrl-0 = <&spi1_default>;
+    pinctrl-1 = <&spi1_sleep>;
+    pinctrl-names = "default", "sleep";
+
+    cs-gpios = <&gpio 26 GPIO_ACTIVE_LOW>;
+
+    afe: ad5941@0 {
+        compatible = "adi,ad5941";
+        reg = <0>;
+        spi-max-frequency = <8000000>;
+        int-gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+        reset-gpios = <&gpio 9 GPIO_ACTIVE_LOW>;
     };
 };
 
-/* */
+/* For PMIC - NPM1304*/
+&i2c0 {
+    status = "okay";
+    compatible = "nordic,nrf-twim";
+    pinctrl-0 = <&i2c0_default>;
+    pinctrl-1 = <&i2c0_sleep>;
+    pinctrl-names = "default", "sleep";
+
+    npm1304: pmic@6b {
+        compatible = "nordic,npm1304";
+        reg = <0x6b>;
+        host-int-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>,
+                         <&gpio0 17 GPIO_ACTIVE_HIGH>;
+        pmic-int-pin = <1>;
+    }
+
+}
+
+&uart0 {
+    status = "okay";
+    pinctrl-0 = <&uart0_default>;
+    pinctrl-1 = <&uart0_sleep>;
+    pinctrl-names = "default", "sleep";
+}
 
 /*------------- For LED Strip -------------------- */
 &spi2 {
